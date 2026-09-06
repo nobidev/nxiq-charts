@@ -103,9 +103,9 @@ iq_server:
     # Set this to use an existing PVC (no PV or PVC will be created)
     existingPersistentVolumeClaimName:
     # If creating a PV, use this name
-    persistentVolumeName: "iq-server-pv"
+    # persistentVolumeName: "iq-server-pv"
     # If creating a PVC, use this name
-    persistentVolumeClaimName: "iq-server-pvc"
+    # persistentVolumeClaimName: "iq-server-pvc"
     # Prevent the PV from being deleted
     persistentVolumeRetainPolicy: "keep"
     # Prevent the PVC from being deleted
