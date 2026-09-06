@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   claimRef:
     namespace: {{ .Release.Namespace }}
-    name: {{ .Values.iq_server.persistence.persistentVolumeClaimName }}
+    name: {{ .Values.iq_server.persistence.persistentVolumeClaimName | default (printf "data-%s" (include "nexus-iq-server-ha.fullname" . )) }}
   capacity:
     storage: {{ .Values.iq_server.persistence.size }}
   accessModes:

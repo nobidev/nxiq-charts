@@ -1,8 +1,7 @@
-{{- if and (.Values.iq_server.persistence.persistentVolumeClaimName) (not .Values.iq_server.persistence.existingPersistentVolumeClaimName) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.iq_server.persistence.persistentVolumeClaimName }}
+  name: {{ .Values.iq_server.persistence.persistentVolumeClaimName | default (printf "data-%s" (include "nexus-iq-server-ha.fullname" . )) }}
   annotations:
     "helm.sh/resource-policy": {{ .Values.iq_server.persistence.persistentVolumeClaimRetainPolicy }}
 spec:
@@ -38,4 +37,3 @@ spec:
     {{- end }}
     {{- end }}
   {{- end }}
-{{- end }}

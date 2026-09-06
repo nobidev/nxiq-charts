@@ -15,7 +15,7 @@ spec:
           volumes:
             - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
               persistentVolumeClaim:
-                claimName: {{- if .Values.iq_server.persistence.existingPersistentVolumeClaimName }} {{ .Values.iq_server.persistence.existingPersistentVolumeClaimName }}{{- else }} {{ .Values.iq_server.persistence.persistentVolumeClaimName }}{{- end }}
+                claimName: {{- if .Values.iq_server.persistence.existingPersistentVolumeClaimName }} {{ .Values.iq_server.persistence.existingPersistentVolumeClaimName }}{{- else }} {{ .Values.iq_server.persistence.persistentVolumeClaimName | default (printf "data-%s" (include "nexus-iq-server-ha.fullname" . )) }}{{- end }}
           containers:
           - name: "{{ include "nexus-iq-server-ha.fullname" . }}-delete-old-aggregate-logs"
             image: {{ include "nexus-iq-server-ha.busyboxImage" . }}
