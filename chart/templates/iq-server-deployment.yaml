@@ -289,6 +289,8 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.iq_server.config.clusterDirectory }}
               name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
+          securityContext:
+            runAsUser: 0
           resources:
             requests:
               {{- if .Values.iq_server.pvOwnershipOverrideResources.requests.cpu }}
