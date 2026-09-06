@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-delete-old-aggregate-logs-cronjob
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-delete-old-aggregate-logs-cronjob
 spec:
   schedule: {{ .Values.aggregateLogFileRetention.deleteCron | quote }}
   concurrencyPolicy: Forbid
@@ -13,11 +13,11 @@ spec:
         spec:
           restartPolicy: OnFailure
           volumes:
-            - name: {{ .Release.Name }}-iq-server-pod-volume
+            - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
               persistentVolumeClaim:
                 claimName: {{- if .Values.iq_server.persistence.existingPersistentVolumeClaimName }} {{ .Values.iq_server.persistence.existingPersistentVolumeClaimName }}{{- else }} {{ .Values.iq_server.persistence.persistentVolumeClaimName }}{{- end }}
           containers:
-          - name: "{{ .Release.Name }}-delete-old-aggregate-logs"
+          - name: "{{ include "nexus-iq-server-ha.fullname" . }}-delete-old-aggregate-logs"
             image: {{ include "nexus-iq-server-ha.busyboxImage" . }}
             imagePullPolicy: IfNotPresent
             command:
@@ -26,7 +26,7 @@ spec:
             - find /log/ -type f -mtime +{{ sub .Values.aggregateLogFileRetention.maxLastModifiedDays 1 }} -delete
             volumeMounts:
               - mountPath: /log
-                name: {{ .Release.Name }}-iq-server-pod-volume
+                name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
                 subPath: log
           {{- with .Values.aggregateLogFileRetention.nodeSelector }}
           nodeSelector:

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-iq-server-config-configmap
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-config-configmap
 data:
   config: |
 {{ tpl (toYaml .Values.iq_server.config | indent 4) $ }}

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-migrate-db
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-migrate-db
   {{- with .Values.iq_server_jobs.migrationJobAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -22,23 +22,23 @@ spec:
     spec:
       serviceAccountName: {{ .Values.iq_server.serviceAccountName }}
       volumes:
-        - name: {{ .Release.Name }}-iq-server-pod-config-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-config-volume
           configMap:
-            name: {{ .Release.Name }}-iq-server-config-configmap
+            name: {{ include "nexus-iq-server-ha.fullname" . }}-config-configmap
             items:
               - key: config
                 path: config.yml
         {{- if .Values.secret.rds.arn }}
-        - name: {{ .Release.Name }}-iq-server-secrets-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-secrets-volume
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: {{ .Release.Name }}-aws-secret-provider
+              secretProviderClass: {{ include "nexus-iq-server-ha.fullname" . }}-aws-secret-provider
               fsType: ext4
         {{- end }}
       containers:
-        - name: {{ .Release.Name }}-iq-server-container
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-container
           image: {{ include "nexus-iq-server-ha.iqServerImage" . }}
           imagePullPolicy: {{ .Values.iq_server.imagePullPolicy }}
           resources:
@@ -58,10 +58,10 @@ spec:
               {{- end }}
           volumeMounts:
             - mountPath: "/etc/nexus-iq-server"
-              name: {{ .Release.Name }}-iq-server-pod-config-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-config-volume
             {{- if .Values.secret.rds.arn }}
             - mountPath: "/iq-secrets"
-              name: {{ .Release.Name }}-iq-server-secrets-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-secrets-volume
             {{- end }}
           env:
             {{- range .Values.iq_server_jobs.env }}
@@ -80,27 +80,27 @@ spec:
             - name: NXIQ_DATABASE_HOSTNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{.Release.Name }}-iq-server-database-hostname-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-hostname-secret"{{- end }}
                   key: "hostname"
             - name: NXIQ_DATABASE_PORT
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{.Release.Name }}-iq-server-database-port-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-port-secret"{{- end }}
                   key: "port"
             - name: NXIQ_DATABASE_NAME
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{.Release.Name }}-iq-server-database-name-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-name-secret"{{- end }}
                   key: "name"
             - name: NXIQ_DATABASE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{ .Release.Name }}-iq-server-database-username-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-username-secret"{{- end }}
                   key: "username"
             - name: NXIQ_DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else if .Values.iq_server.database.passwordSecret }} {{ .Values.iq_server.database.passwordSecret | quote }}{{- else }} "{{ .Release.Name }}-iq-server-database-password-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else if .Values.iq_server.database.passwordSecret }} {{ .Values.iq_server.database.passwordSecret | quote }}{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-password-secret"{{- end }}
                   key: "password"
           command:
             - /bin/sh
@@ -127,7 +127,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-git-ssh
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-git-ssh
   {{- with .Values.iq_server_jobs.gitSshJobAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -148,47 +148,47 @@ spec:
     spec:
       serviceAccountName: {{ .Values.iq_server.serviceAccountName }}
       volumes:
-        - name: {{ .Release.Name }}-iq-server-pod-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
           persistentVolumeClaim:
             claimName: {{- if .Values.iq_server.persistence.existingPersistentVolumeClaimName }} {{ .Values.iq_server.persistence.existingPersistentVolumeClaimName }}{{- else }} {{ .Values.iq_server.persistence.persistentVolumeClaimName }}{{- end }}
       {{- if or (.Values.secret.sshKnownHosts.arn) (.Values.secret.sshPrivateKey.arn) }}
-        - name: {{ .Release.Name }}-iq-server-secrets-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-secrets-volume
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: {{ .Release.Name }}-aws-secret-provider
+              secretProviderClass: {{ include "nexus-iq-server-ha.fullname" . }}-aws-secret-provider
               fsType: ext4
       {{- end }}
       {{- if .Values.iq_server.sshPrivateKeySecret }}
-        - name: {{ .Release.Name }}-iq-server-pod-private-key-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-private-key-volume
           secret:
             secretName: {{ .Values.iq_server.sshPrivateKeySecret }}
       {{- end }}
       {{- if .Values.iq_server.sshKnownHostsSecret }}
-        - name: {{ .Release.Name }}-iq-server-pod-known-hosts-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-known-hosts-volume
           secret:
             secretName: {{ .Values.iq_server.sshKnownHostsSecret }}
       {{- end }}
       containers:
-        - name: {{ .Release.Name }}-git-ssh-container
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-git-ssh-container
           image: {{ include "nexus-iq-server-ha.iqServerImage" . }}
           imagePullPolicy: {{ .Values.iq_server.imagePullPolicy }}
           volumeMounts:
             - mountPath: {{ .Values.iq_server.config.clusterDirectory }}
-              name: {{ .Release.Name }}-iq-server-pod-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
             {{- if or (.Values.secret.sshKnownHosts.arn) (.Values.secret.sshPrivateKey.arn) }}
             - mountPath: "/iq-secrets"
-              name: {{ .Release.Name }}-iq-server-secrets-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-secrets-volume
             {{- end }}
             {{- if .Values.iq_server.sshPrivateKeySecret }}
             - mountPath: "/opt/sonatype/nexus-iq-server/.ssh/private-key-volume"
-              name: {{ .Release.Name }}-iq-server-pod-private-key-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-private-key-volume
               readOnly: true
             {{- end }}
             {{- if .Values.iq_server.sshKnownHostsSecret }}
             - mountPath: "/opt/sonatype/nexus-iq-server/.ssh/known-hosts-volume"
-              name: {{ .Release.Name }}-iq-server-pod-known-hosts-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-known-hosts-volume
               readOnly: true
             {{- end }}
           command:

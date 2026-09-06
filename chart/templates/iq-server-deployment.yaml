@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-iq-server-deployment
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-deployment
 spec:
   replicas: {{ .Values.iq_server.replicas }}
   selector:
     matchLabels:
-      name: {{ .Release.Name }}-iq-server
+      name: {{ include "nexus-iq-server-ha.fullname" . }}
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-iq-server
+        name: {{ include "nexus-iq-server-ha.fullname" . }}
     {{- with .Values.iq_server.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
@@ -29,26 +29,26 @@ spec:
       {{- end }}
 
       volumes:
-        - name: {{ .Release.Name }}-iq-server-pod-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
           persistentVolumeClaim:
             claimName: {{- if .Values.iq_server.persistence.existingPersistentVolumeClaimName }} {{ .Values.iq_server.persistence.existingPersistentVolumeClaimName }}{{- else }} {{ .Values.iq_server.persistence.persistentVolumeClaimName }}{{- end }}
         {{- if or (.Values.secret.arn) (.Values.secret.license.arn) (.Values.secret.rds.arn) (.Values.secret.sshPrivateKey.arn) (.Values.secret.sshKnownHosts.arn) }}
-        - name: {{ .Release.Name }}-iq-server-secrets-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-secrets-volume
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: {{ .Release.Name }}-aws-secret-provider
+              secretProviderClass: {{ include "nexus-iq-server-ha.fullname" . }}-aws-secret-provider
               fsType: ext4
         {{- end }}
         {{- if or (.Values.iq_server.licenseSecret) (.Values.iq_server.license) }}
-        - name: {{ .Release.Name }}-iq-server-pod-license-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-license-volume
           secret:
-            secretName: {{- if .Values.iq_server.licenseSecret }} {{ .Values.iq_server.licenseSecret }}{{- else}} {{ .Release.Name }}-iq-server-license-secret{{- end}}
+            secretName: {{- if .Values.iq_server.licenseSecret }} {{ .Values.iq_server.licenseSecret }}{{- else}} {{ include "nexus-iq-server-ha.fullname" . }}-license-secret{{- end}}
         {{- end }}
-        - name: {{ .Release.Name }}-iq-server-pod-config-volume
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-config-volume
           configMap:
-            name: {{ .Release.Name }}-iq-server-config-configmap
+            name: {{ include "nexus-iq-server-ha.fullname" . }}-config-configmap
             items:
               - key: config
                 path: config.yml
@@ -74,7 +74,7 @@ spec:
           {{- end }}
         {{- end }}
       containers:
-        - name: {{ .Release.Name }}-iq-server-container
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-container
           image: {{ include "nexus-iq-server-ha.iqServerImage" . }}
           imagePullPolicy: {{ .Values.iq_server.imagePullPolicy }}
           {{- if .Values.iq_server.command }}
@@ -111,20 +111,20 @@ spec:
             {{- end }}
           volumeMounts:
             - mountPath: {{ .Values.iq_server.config.clusterDirectory }}
-              name: {{ .Release.Name }}-iq-server-pod-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
             - mountPath: "/opt/sonatype/nexus-iq-server/.ssh"
-              name: {{ .Release.Name }}-iq-server-pod-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
               subPath: .ssh
             - mountPath: "/etc/nexus-iq-server"
-              name: {{ .Release.Name }}-iq-server-pod-config-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-config-volume
             {{- if or (.Values.secret.arn) (.Values.secret.license.arn) (.Values.secret.rds.arn) (.Values.secret.sshPrivateKey.arn) (.Values.secret.sshKnownHosts.arn) }}
             - mountPath: "/iq-secrets"
-              name: {{ .Release.Name }}-iq-server-secrets-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-secrets-volume
               readOnly: true
             {{- end }}
             {{- if or (.Values.iq_server.licenseSecret) (.Values.iq_server.license) }}
             - mountPath: "/license"
-              name: {{ .Release.Name }}-iq-server-pod-license-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-license-volume
               readOnly: true
             {{- end }}
             {{- range .Values.iq_server.extraVolumeMounts }}
@@ -138,7 +138,7 @@ spec:
               {{- end }}
             {{- end }}
             - mountPath: "/var/log/nexus-iq-server/stderr.log"
-              name: {{ .Release.Name }}-iq-server-pod-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
               subPathExpr: log/$(HOSTNAME)-stderr.log
           env:
             {{- if or (.Values.iq_server.licenseSecret) (.Values.iq_server.license) }}
@@ -165,32 +165,32 @@ spec:
             - name: NXIQ_INITIAL_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.arn }} "{{ .Release.Name }}-aws-secret"{{- else if .Values.iq_server.initialAdminPasswordSecret }} {{ .Values.iq_server.initialAdminPasswordSecret | quote }}{{- else }} "{{ .Release.Name }}-iq-server-initial-admin-password-secret"{{- end }}
+                  name: {{- if .Values.secret.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-secret"{{- else if .Values.iq_server.initialAdminPasswordSecret }} {{ .Values.iq_server.initialAdminPasswordSecret | quote }}{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-initial-admin-password-secret"{{- end }}
                   key: "password"
             - name: NXIQ_DATABASE_HOSTNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{ .Release.Name }}-iq-server-database-hostname-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-hostname-secret"{{- end }}
                   key: "hostname"
             - name: NXIQ_DATABASE_PORT
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{.Release.Name }}-iq-server-database-port-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-port-secret"{{- end }}
                   key: "port"
             - name: NXIQ_DATABASE_NAME
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{.Release.Name }}-iq-server-database-name-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-name-secret"{{- end }}
                   key: "name"
             - name: NXIQ_DATABASE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else }} "{{ .Release.Name }}-iq-server-database-username-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-username-secret"{{- end }}
                   key: "username"
             - name: NXIQ_DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.secret.rds.arn }} "{{ .Release.Name }}-aws-rds-secret"{{- else if .Values.iq_server.database.passwordSecret }} {{ .Values.iq_server.database.passwordSecret | quote }}{{- else }} "{{ .Release.Name }}-iq-server-database-password-secret"{{- end }}
+                  name: {{- if .Values.secret.rds.arn }} "{{ include "nexus-iq-server-ha.fullname" . }}-aws-rds-secret"{{- else if .Values.iq_server.database.passwordSecret }} {{ .Values.iq_server.database.passwordSecret | quote }}{{- else }} "{{ include "nexus-iq-server-ha.fullname" . }}-database-password-secret"{{- end }}
                   key: "password"
             - name: NXIQ_DATABASE_MIGRATION
               value: "false"
@@ -275,7 +275,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
-        - name: {{ .Release.Name }}-set-iq-persistence-ownership
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-set-iq-persistence-ownership
           image: {{ include "nexus-iq-server-ha.busyboxImage" . }}
           command:
             - /bin/sh
@@ -288,7 +288,7 @@ spec:
                   fieldPath: metadata.name
           volumeMounts:
             - mountPath: {{ .Values.iq_server.config.clusterDirectory }}
-              name: {{ .Release.Name }}-iq-server-pod-volume
+              name: {{ include "nexus-iq-server-ha.fullname" . }}-pod-volume
           resources:
             requests:
               {{- if .Values.iq_server.pvOwnershipOverrideResources.requests.cpu }}

@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Release.Name }}-external-dns
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
 rules:
 - apiGroups: [""]
   resources: ["services","endpoints","pods","nodes"]
@@ -14,13 +14,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Release.Name }}-external-dns-viewer
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns-viewer
   labels:
-    app.kubernetes.io/name: {{ .Release.Name }}-external-dns
+    app.kubernetes.io/name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Release.Name }}-external-dns
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.iq_server.serviceAccountName }}
@@ -29,24 +29,24 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-external-dns
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
   labels:
-    app.kubernetes.io/name: {{ .Release.Name }}-external-dns
+    app.kubernetes.io/name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
 spec:
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ .Release.Name }}-external-dns
+      app.kubernetes.io/name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ .Release.Name }}-external-dns
+        app.kubernetes.io/name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
     spec:
       serviceAccountName: {{ .Values.iq_server.serviceAccountName }}
       automountServiceAccountToken: true
       containers:
-        - name: {{ .Release.Name }}-external-dns
+        - name: {{ include "nexus-iq-server-ha.fullname" . }}-external-dns
           image: registry.k8s.io/external-dns/external-dns:v0.13.1
           args:
             {{- range .Values.externalDns.args }}

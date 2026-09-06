@@ -30,7 +30,7 @@ data:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-ingress
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-ingress
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -58,7 +58,7 @@ spec:
             pathType: {{ .Values.ingress.pathType }}
             backend:
               service:
-                name: {{ .Release.Name }}-iq-server-application-service
+                name: {{ include "nexus-iq-server-ha.fullname" . }}-application-service
                 port:
                   {{- with index .Values.iq_server.config.server.applicationConnectors 0 }}
                   number: {{ .port }}
@@ -72,7 +72,7 @@ spec:
             pathType: {{ .Values.ingress.pathType }}
             backend:
               service:
-                name: {{ .Release.Name }}-iq-server-admin-service
+                name: {{ include "nexus-iq-server-ha.fullname" . }}-admin-service
                 port:
                   {{- with index .Values.iq_server.config.server.adminConnectors 0 }}
                   number: {{ .port }}

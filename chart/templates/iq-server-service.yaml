@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-iq-server-application-service
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-application-service
   {{- with .Values.iq_server.applicationServiceAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -9,7 +9,7 @@ metadata:
 spec:
   type: {{ .Values.iq_server.serviceType }}
   selector:
-    name: {{ .Release.Name }}-iq-server
+    name: {{ include "nexus-iq-server-ha.fullname" . }}
   ports:
     {{- range $index, $value := (.Values.iq_server.config.server.applicationConnectors) }}
     - name: iq-server-app-port-{{- $index }}
@@ -21,7 +21,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-iq-server-admin-service
+  name: {{ include "nexus-iq-server-ha.fullname" . }}-admin-service
   {{- with .Values.iq_server.adminServiceAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -29,7 +29,7 @@ metadata:
 spec:
   type: {{ .Values.iq_server.serviceType }}
   selector:
-    name: {{ .Release.Name }}-iq-server
+    name: {{ include "nexus-iq-server-ha.fullname" . }}
   ports:
     {{- range $index, $value := (.Values.iq_server.config.server.adminConnectors) }}
     - name: iq-server-adm-port-{{- $index }}

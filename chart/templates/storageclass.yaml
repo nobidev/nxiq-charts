@@ -5,7 +5,7 @@ metadata:
   name: {{ include "nexus-iq-server-ha.storageClassName" . }}
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ include "nexus-iq-server-ha.fullname" . }}
     {{- with .Values.iq_server.persistence.storageClass.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
